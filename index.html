@@ -2,7 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Party Pong">
+<meta name="theme-color" content="#120c2b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <title>Party Pong</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
@@ -11,8 +19,9 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:'Fredoka',system-ui,sans-serif;overscroll-behavior:none}
 button{touch-action:manipulation;font-family:inherit;cursor:pointer}
-#game{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
-.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:flex-start;gap:16px;padding:26px 20px;overflow-y:auto;background:rgba(14,9,36,.72);z-index:5;text-align:center}
+#stage{position:fixed;top:env(safe-area-inset-top,0px);right:env(safe-area-inset-right,0px);bottom:env(safe-area-inset-bottom,0px);left:env(safe-area-inset-left,0px)}
+#game{width:100%;height:100%;display:block;touch-action:none}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:flex-start;gap:16px;padding:calc(26px + env(safe-area-inset-top,0px)) calc(20px + env(safe-area-inset-right,0px)) calc(26px + env(safe-area-inset-bottom,0px)) calc(20px + env(safe-area-inset-left,0px));overflow-y:auto;background:rgba(14,9,36,.72);z-index:5;text-align:center}
 .screen.show{display:flex}
 .screen>:first-child{margin-top:auto}.screen>:last-child{margin-bottom:auto}
 #shop>:first-child{margin-top:0}
@@ -73,12 +82,12 @@ details .pulist{margin-top:8px}
 .item.eq .pr{background:#4ade80;color:#06281a}
 .note{color:var(--muted);font-size:16px;margin:0;max-width:780px}
 /* hud */
-#hud{position:fixed;top:10px;display:none;gap:10px;z-index:3;align-items:center}
+#hud{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));display:none;gap:10px;z-index:3;align-items:center}
 #hud.center{left:50%;transform:translateX(-50%)}
-#hud.corner{left:12px;transform:none}
+#hud.corner{left:calc(12px + env(safe-area-inset-left,0px));transform:none}
 #pauseBtn{width:54px;height:54px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:22px}
 #hud .pill{font-size:19px;padding:6px 14px}
-#toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(140%);opacity:0;background:#fff;color:#1a1033;font-weight:700;font-size:20px;padding:14px 24px;border-radius:18px;z-index:9;transition:transform .25s,opacity .25s;box-shadow:0 8px 30px rgba(0,0,0,.4);pointer-events:none}
+#toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(140%);opacity:0;background:#fff;color:#1a1033;font-weight:700;font-size:20px;padding:14px 24px;border-radius:18px;z-index:9;transition:transform .25s,opacity .25s;box-shadow:0 8px 30px rgba(0,0,0,.4);pointer-events:none}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 #over{background:rgba(14,9,36,.55)}
 .trophy{font-size:84px;animation:bob 1.6s ease-in-out infinite}
@@ -88,7 +97,7 @@ details .pulist{margin-top:8px}
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
+<div id="stage"><canvas id="game"></canvas></div>
 
 <div id="hud" class="center"><div class="pill"><span class="coin"></span><span class="coins">0</span></div><button id="pauseBtn" aria-label="Pause">❚❚</button></div>
 
@@ -759,14 +768,15 @@ function zoneFor(x,y){
   for(const p of game.players){if(p.cpu||!p.alive)continue;const d=segDist(F.edges[p.e],x,y);if(d<bd){bd=d;best=p.i}}
   return best;
 }
+function cvPt(e){const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]}
 function ptrMove(e){
   const idx=ptr.get(e.pointerId);if(idx==null||!game)return;
   const p=game.players[idx];if(!p||p.cpu||!p.alive)return;
-  p.target=uOf(F.edges[p.e],e.clientX,e.clientY);
+  const [x,y]=cvPt(e);p.target=uOf(F.edges[p.e],x,y);
 }
 cv.addEventListener('pointerdown',e=>{
   if(!game||game.demo)return;
-  const idx=zoneFor(e.clientX,e.clientY);if(idx<0)return;
+  const [x,y]=cvPt(e),idx=zoneFor(x,y);if(idx<0)return;
   ptr.set(e.pointerId,idx);try{cv.setPointerCapture(e.pointerId)}catch(_){}ptrMove(e);e.preventDefault();
 });
 cv.addEventListener('pointermove',ptrMove);
@@ -1222,14 +1232,14 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseGame()
 
 /* boot */
 function resize(){
-  DPR=Math.min(window.devicePixelRatio||1,2);W=innerWidth;H=innerHeight;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);
+  DPR=Math.min(window.devicePixelRatio||1,2);W=cv.clientWidth||innerWidth;H=cv.clientHeight||innerHeight;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);
   if(game){const old=F;F=buildField(game.mode,game.mods);
     for(const p of game.players){const k=F.edges[p.e].len/old.edges[p.e].len;p.s*=k;if(p.target!=null)p.target*=k}
     for(const b of game.balls){b.x=F.cx;b.y=F.cy;b.r=F.R;b.trail=[]}
     game.pus=[];
   }
 }
-addEventListener('resize',resize);resize();
+addEventListener('resize',resize);addEventListener('orientationchange',()=>setTimeout(resize,250));resize();setTimeout(resize,300);
 refreshSound();updateCoins();startDemo(2);show('menu');
 let lastT=performance.now();
 function loop(now){

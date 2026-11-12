@@ -1,0 +1,16 @@
+{
+  "name": "Party Pong",
+  "short_name": "Party Pong",
+  "description": "A colorful pong game for 2–4 players on one tablet.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#120c2b",
+  "theme_color": "#120c2b",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
